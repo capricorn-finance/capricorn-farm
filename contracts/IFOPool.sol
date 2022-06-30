@@ -275,8 +275,8 @@ contract IFOPool is IIFOPool{
 		require(block.timestamp > endTimestamp,'can not claim');
 
 		UserInfo storage user = userInfo[msg.sender];
-		require(!user.claimed,'claimed');
-		user.claimed = true;
+		//require(!user.claimed,'claimed');
+		
 
 		if(!settled){
 			settle();
@@ -286,11 +286,11 @@ contract IFOPool is IIFOPool{
 		}
 
 		(uint reward,uint refund) = consult(user.amount,raiseTotal);
-
-		if(reward > 0){
+		
+		if(!user.claimed && reward > 0){
 			IERC20(sellToken).safeTransfer(msg.sender, reward);
 		}
-		if(refund > 0){
+		if(!user.claimed && refund > 0){
 			if(raiseToken == WCUBE){
 				IWCUBE(WCUBE).withdraw(refund);
 	        	safeTransferCUBE(address(msg.sender), refund);
@@ -299,11 +299,14 @@ contract IFOPool is IIFOPool{
 				IERC20(raiseToken).safeTransfer(msg.sender, refund);
 			}
 		}
+		user.claimed = true;
 
 		emit Claim(msg.sender,reward,refund);
 	}
 
-	function settle() internal{
+	function settle() public{
+		require(block.timestamp > endTimestamp,'can not settled');
+		require(!settled,'settled');
 		uint excessRate = IIFOFactory(factory).excessRate();
 		uint topLimit = raiseAmount.mul(100+excessRate).div(100);
 
@@ -331,6 +334,7 @@ contract IFOPool is IIFOPool{
 		// make lpPair
 		address swapRouter = IIFOFactory(factory).swapRouter();
 		address swapFactory = IIFOFactory(factory).swapFactory();
+		uint256 slippage = IIFOFactory(factory).slippage();
 
 		IERC20(raiseToken).approve(swapRouter,lpTokenAmountA);
 		IERC20(sellToken).approve(swapRouter,lpTokenAmountB);
@@ -344,7 +348,7 @@ contract IFOPool is IIFOPool{
 		else{
 			(uint reserveA, uint reserveB) = CapswapV2Library.getReserves(swapFactory,raiseToken,sellToken);
 			uint expect_B = CapswapV2Library.quote(lpTokenAmountA,reserveA,reserveB);
-			if(expect_B > lpTokenAmountB.mul(97).div(100) && expect_B < lpTokenAmountB.mul(103).div(100)){
+			if(expect_B > lpTokenAmountB.mul(100-slippage).div(100) && expect_B < lpTokenAmountB.mul(100+slippage).div(100)){
 				can_add_lp = true;
 			}
 
@@ -356,8 +360,8 @@ contract IFOPool is IIFOPool{
 				sellToken,
 				lpTokenAmountA,
 				lpTokenAmountB,
-				lpTokenAmountA.mul(96).div(100),
-				lpTokenAmountB.mul(96).div(100),
+				0,
+				0,
 				address(this),
 				block.timestamp
 			);
