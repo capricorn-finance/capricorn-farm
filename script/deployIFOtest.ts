@@ -19,13 +19,13 @@ async function main() {
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
 
-/* cube-testnet internal
+//* cube-testnet internal
   const masterchef = '0x4b3f5a330A64D3CFAa33ba6E2D2936a195904f38';
   const swapFactor = '0xc524aed399c4dc98c42af8fab58f440ff5cd36f0';
   const USDT = '0x9bd522cc85bd1bd6d069d5e273e46ccfee905493';
   const wcube = '0xB9164670A2F388D835B868b3D0D441fa1bE5bb00';
   const swapRouter = '0xc82edd7f219d0771f4bc45353d67fc4c8d34c1ee';
-  const validator_addr = "";
+  const feeToAddr = '0xa2b836ce2da26a10500e916bCB7F0e0b96Dd1319';
 //*/
 
 /* cube-testnet
@@ -34,31 +34,28 @@ async function main() {
   const USDT = '0x9bd522cc85bd1bd6d069d5e273e46ccfee905493';
   const wcube = '0xB9164670A2F388D835B868b3D0D441fa1bE5bb00';
   const swapRouter = '0x14c02dc9b29ac28e852f740cba6722bc7308feb8';
-  const validator_addr = "";
 //*/
 
-//* cube-mainnet
+/* cube-mainnet
   const masterchef = '0x441e22e8cC8c3cfa14086a78ED130e1841307860';
   const swapFactor = '0x33CB4150f3ADFCD92fbFA3309823A2a242bF280f';
   const USDT = '0x79F1520268A20c879EF44d169A4E3812D223C6de';
 
   const wcube = '0x9d3f61338d6eb394e378d28c1fd17d5909ac6591';
   const swapRouter = '0x34c385dd9015d663830a37CD2E75818fda6C605f';
-  const feeToAddr = '0x37e45820279efefb805f71707883c438bed9e0d4';
-  const validator_addr = "0x7686Ba3b39796066Da624f12eB91dc881e8c6528";
-
+  const feeToAddr = '0x37e45820279efefb805f71707883c438bed9e0d4'
 //*/
 
-  // const Validator= await ethers.getContractFactory("Validator");
-  // const validator = await Validator.deploy(masterchef, swapFactor,USDT);
-  // await validator.deployed();
-  // const validator_addr = validator.address;
-  // console.log("deploy validator",validator.address);
+  const Validator= await ethers.getContractFactory("Validator");
+  const validator = await Validator.deploy(masterchef, swapFactor,USDT);
+  await validator.deployed();
+  const validator_addr = validator.address;
+  console.log("deploy validator",validator.address);
 
   const IFOFactory = await ethers.getContractFactory("IFOFactory");
   const ifoFactory = await IFOFactory.deploy(wcube,swapRouter,validator_addr);
   await ifoFactory.deployed();
-  const ifoFactory_addr = ifoFactory.address;
+  //const ifoFactory_addr =  ifoFactory.address;
   console.log("deploy ifoFactory",ifoFactory.address);
 
   // setMinTime
@@ -67,7 +64,7 @@ async function main() {
   console.log("setMinTime",await ifoFactory.MIN_TIME());
 
   // setMinPeriod
-  const setMinPeriod = await ifoFactory.setMinPeriod(30);
+  const setMinPeriod = await ifoFactory.setMinPeriod(0);
   await setMinPeriod.wait();
   console.log("setMinPeriod",await ifoFactory.MIN_PERIOD());
 
